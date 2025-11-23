@@ -8,7 +8,7 @@ export const splitVideo = async (
     onProgress: (progress: number, stage: string) => void
 ): Promise<File[]> => {
     const ffmpeg = new FFmpeg();
-    const OVERLAP = 2; // 2 Seconds overlap
+    const OVERLAP = 2; // 2 Seconds overlap for gapless playback
     
     // URLs for the FFmpeg core and worker
     const coreBaseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm';
@@ -34,19 +34,8 @@ export const splitVideo = async (
 
     onProgress(10, 'Analyzing...');
     
-    // Get duration using ffprobe (via exec since ffmpeg.js doesn't expose probe directly nicely)
-    // We'll rely on the HTML video element method to get duration cheaply before upload if possible, 
-    // but here we can just estimate or use a loop until we run out of frames.
-    // For robustness in browser, we will use a JS-based approach to calc chunks.
-    
-    // Since we can't easily get duration inside ffmpeg.wasm without parsing logs, 
-    // we assume the caller or a hidden video element provided duration, 
-    // OR we just keep cutting until a cut fails. 
-    
     // Let's use a more robust approach: Stream Copy splitting in a loop.
-    
     // We first re-encode audio to AAC to ensure compatibility, then copy video.
-    // Note: -c copy is fast but keyframe dependent. With overlap, this is less risky.
     
     const outputFiles: File[] = [];
     let startTime = 0;
@@ -59,8 +48,9 @@ export const splitVideo = async (
 
     while (!done) {
         const fileName = `part_${String(part).padStart(3, '0')}.mp4`;
-        // Duration of this clip = segmentDuration + OVERLAP
-        // Except the last one might be shorter
+        
+        // IMPORTANT: Duration of this clip = segmentDuration + OVERLAP
+        // This ensures the end of this clip matches the start of the next clip
         const clipDuration = segmentDuration + OVERLAP;
         
         const percent = Math.min(95, 20 + (part * 5));
@@ -84,26 +74,15 @@ export const splitVideo = async (
             }
             
             const blob = new Blob([data], { type: 'video/mp4' });
-            // Check if blob is valid video (optional, skip for speed)
-            
             outputFiles.push(new File([blob], fileName, { type: 'video/mp4' }));
             await ffmpeg.deleteFile(fileName);
             
             // Calculate next start time
-            // Standard logic: We advance by segmentDuration. 
-            // E.g. 0-12, then 10-22, then 20-32.
+            // We advance by segmentDuration (the unique content), not clipDuration
             startTime += segmentDuration;
             part++;
 
-            // Safety break if infinite loop (e.g. file > 5 hours in 10s chunks)
-            if (part > 1000) done = true; 
-            
-            // Detect end of file logic: 
-            // If the generated file is significantly shorter than requested duration (minus overlap)
-            // it means we hit the end.
-            // Since we can't easily check duration of blob without loading it, 
-            // we will rely on the loop eventually failing or producing tiny files if we go past end.
-            // With -c copy, ffmpeg usually exits clean.
+            if (part > 1000) done = true; // Safety break
             
         } catch (e) {
             done = true;

@@ -1,6 +1,8 @@
 
 
 
+
+
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { getTelegramFileUrl } from '../utils/telegram';
 import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, ArrowLeft, SkipBack, SkipForward, Radio, Loader2 } from 'lucide-react';
@@ -275,7 +277,10 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({ videoUrl, thumbna
             }
 
             const activeRef = activePlayer === 'A' ? playerARef.current : playerBRef.current;
-            const nextRef = activePlayer === 'A' ? playerBRef.current : playerARef.current;
+            // nextRef is the "Pre-roll" player (will become active) OR the "Fade-out" player (was active)
+            // Actually, let's name them explicitly
+            const otherRef = activePlayer === 'A' ? playerBRef.current : playerARef.current;
+            
             const desiredVolume = (isMuted || needsUnmute) ? 0 : volume;
             const currentList = playlistRef.current;
 
@@ -285,56 +290,66 @@ const CustomVideoPlayer: React.FC<CustomVideoPlayerProps> = ({ videoUrl, thumbna
                 if (activeRef.buffered.length > 0) setBuffered(activeRef.buffered.end(activeRef.buffered.length - 1));
 
                 const playhead = activeRef.currentTime;
-                const timeToSwitch = segmentDuration - playhead;
-                const FADE_WINDOW = 1.0; // 1 second fade window
-
-                if (currentIndex < currentList.length - 1 && nextRef) {
-                    // 1. Pre-roll next player
-                    if (timeToSwitch < 2 && nextRef.paused) {
-                        nextRef.volume = 0;
-                        nextRef.play().catch(() => {});
+                
+                // 1. Playback Switch Logic (Gapless)
+                if (currentIndex < currentList.length - 1 && otherRef) {
+                    
+                    // Pre-roll Next
+                    // If we are approaching the switch point, make sure next player is ready
+                    const timeToSwitch = segmentDuration - playhead;
+                    
+                    if (timeToSwitch < 2 && otherRef.paused && otherRef.readyState >= 2) {
+                        otherRef.volume = 0; // Start muted
+                        otherRef.play().catch(() => {});
                     }
 
-                    // 2. Crossfade Audio
-                    if (timeToSwitch < FADE_WINDOW && timeToSwitch > -OVERLAP_DURATION) {
-                        let volActive = 1;
-                        let volNext = 0;
-
-                        if (timeToSwitch < FADE_WINDOW && timeToSwitch > 0) {
-                             const ratio = (FADE_WINDOW - timeToSwitch) / FADE_WINDOW; // 0 -> 1
-                             volActive = 1 - ratio;
-                             volNext = ratio;
-                        } else if (timeToSwitch <= 0) {
-                             volActive = 0;
-                             volNext = 1;
-                        }
-
-                        activeRef.volume = Math.max(0, desiredVolume * volActive);
-                        nextRef.volume = Math.min(desiredVolume, desiredVolume * volNext);
-                    } else {
-                        // Normal playback
-                        if (Math.abs(activeRef.volume - desiredVolume) > 0.05) activeRef.volume = desiredVolume;
-                    }
-
-                    // 3. SWITCH PLAYER POINTER
+                    // Trigger Switch at exact Segment boundary
                     if (playhead >= segmentDuration && !switchingRef.current) {
                         switchingRef.current = true;
+                        
+                        // SWAP PLAYERS VISUALLY
                         setActivePlayer(prev => prev === 'A' ? 'B' : 'A');
+                        
                         const nextIdx = currentIndex + 1;
                         setCurrentIndex(nextIdx);
                         currentIndexRef.current = nextIdx;
                         
-                        // Next player (now active) full volume
-                        nextRef.volume = desiredVolume; 
                         switchingRef.current = false;
+                        
+                        // Note: At this exact moment, the New Active Player (was otherRef) 
+                        // should be at t=0 roughly (or closely synced)
+                        // The Old Active Player (now otherRef) continues playing into overlap area
                     }
-                } 
+                }
                 
-                // Cleanup old player (tail)
-                const otherRef = activePlayer === 'A' ? playerBRef.current : playerARef.current;
-                if (otherRef && !otherRef.paused && otherRef.currentTime > segmentDuration + OVERLAP_DURATION - 0.5) {
-                    otherRef.pause();
-                    otherRef.currentTime = 0;
+                // 2. Audio Crossfade Logic
+                // If we just switched, we have an 'otherRef' (old player) that is in overlap zone (> segmentDuration)
+                // And 'activeRef' (new player) is in start zone (< overlap)
+                
+                // Case A: Overlap Crossfade
+                if (otherRef && !otherRef.paused && otherRef.currentTime > segmentDuration) {
+                     // We are in the overlap tail of the OLD player
+                     // otherRef is OLD. activeRef is NEW.
+                     
+                     const timeIntoOverlap = otherRef.currentTime - segmentDuration;
+                     const overlapProgress = timeIntoOverlap / OVERLAP_DURATION;
+                     const clampedProgress = Math.max(0, Math.min(1, overlapProgress));
+                     
+                     // New player fades IN (0 -> 1)
+                     activeRef.volume = desiredVolume * clampedProgress;
+                     
+                     // Old player fades OUT (1 -> 0)
+                     otherRef.volume = desiredVolume * (1 - clampedProgress);
+                     
+                     // Stop old player when overlap done
+                     if (timeIntoOverlap >= OVERLAP_DURATION) {
+                         otherRef.pause();
+                         otherRef.currentTime = 0;
+                     }
+                } 
+                // Case B: Normal Playback
+                else {
+                    if (Math.abs(activeRef.volume - desiredVolume) > 0.05) activeRef.volume = desiredVolume;
                 }
 
                 // End of Playlist Logic

@@ -1,6 +1,8 @@
 
 
 
+
+
 import React, { useState, useEffect, useRef } from 'react';
 // FIX: Replaced v6 imports with v5 equivalents. Outlet is removed, useNavigate is useHistory.
 // FIX: Changed import to wildcard to resolve module resolution issues.
@@ -104,8 +106,8 @@ const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <div className="flex h-screen bg-light text-slate-800 overflow-hidden">
             <aside className={`fixed top-0 left-0 h-full z-40 w-64 bg-white border-r border-slate-200/80 flex flex-col p-4 transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 <div className="px-2 mb-8 flex items-center gap-3">
-                    <img src={logoSrc} alt="LurnX Logo" className="h-9 w-auto rounded-md" />
-                    <span className="text-xl font-bold text-slate-800">Admin</span>
+                    <img src={logoSrc} alt="LurnX Logo" className="h-10 w-auto rounded-md" />
+                    <span className="text-xl font-bold text-slate-800">LurnX Admin</span>
                 </div>
                 <nav className="flex-1 flex flex-col justify-between">
                     <div>

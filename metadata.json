@@ -1,0 +1,7 @@
+{
+  "name": "Copy of LurnX",
+  "description": "LurnX - A comprehensive edtech platform featuring courses, video lectures, PDFs, quizzes, and detailed dashboards.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

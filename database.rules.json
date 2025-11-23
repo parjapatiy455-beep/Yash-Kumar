@@ -1,0 +1,16 @@
+
+{
+  "rules": {
+    ".read": true,
+    ".write": true,
+    "users": {
+      ".indexOn": ["email", "role"]
+    },
+    "supportTickets": {
+      ".indexOn": "userId"
+    },
+    "announcements": {
+      ".indexOn": "createdAt"
+    }
+  }
+}

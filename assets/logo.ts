@@ -1,0 +1,1 @@
+export const logoSrc = 'https://i.ibb.co/RTHQqMsr/Whats-App-Image-2025-11-23-at-1-58-10-PM.jpg'

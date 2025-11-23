@@ -1,14 +1,9 @@
-
 import React, { useState, FormEvent } from 'react';
-// FIX: Replaced v6 `useNavigate` with v5 `useHistory`.
-// FIX: Changed import to wildcard to resolve module resolution issues.
 import * as ReactRouterDom from 'react-router-dom';
 const { Link, useNavigate } = ReactRouterDom;
 import { useAuth } from '../context/AuthContext';
-import { logoSrc } from '../assets/logo';
+import { useBranding } from '../hooks/useBranding';
 import { UserPlus } from 'lucide-react';
-
-
 
 const SignupPage: React.FC = () => {
     const [name, setName] = useState('');
@@ -16,9 +11,9 @@ const SignupPage: React.FC = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    // FIX: Switched to useNavigate hook for v6.
     const navigate = useNavigate();
     const { signup } = useAuth();
+    const { logoUrl, appName } = useBranding();
 
     const handleSignup = async (e: FormEvent) => {
         e.preventDefault();
@@ -28,7 +23,6 @@ const SignupPage: React.FC = () => {
         try {
             const newUser = await signup(name, email, password);
             if (newUser) {
-                // FIX: Changed navigation method to navigate for v6.
                 navigate('/dashboard');
             }
         } catch (err: any) {
@@ -48,7 +42,7 @@ const SignupPage: React.FC = () => {
         <div className="flex items-center justify-center min-h-login py-8 px-4 sm:px-6 lg:px-8">
             <div className="w-full max-w-md space-y-8 opacity-0 animate-fade-in-up">
                 <div className="text-center">
-                    <img src={logoSrc} alt="VedPath Logo" className="mx-auto h-14 w-auto mb-4" />
+                    <img src={logoUrl} alt={`${appName} Logo`} className="mx-auto h-14 w-auto mb-4" />
                     <h2 className="text-3xl font-bold tracking-tight text-slate-900">
                         Create Your Account
                     </h2>

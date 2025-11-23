@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import * as ReactRouterDom from 'react-router-dom';
 const { useParams, useNavigate } = ReactRouterDom;
@@ -14,7 +11,7 @@ import LoadingIndicator from '../../components/LoadingIndicator';
 import NoData from '../../components/NoData';
 import TelegramImage from '../../components/TelegramImage';
 import { formatTime } from '../../utils/formatTime';
-import { logoSrc } from '../../assets/logo';
+import { useBranding } from '../../hooks/useBranding';
 
 const getYouTubeId = (url: string): string | null => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -122,6 +119,7 @@ const ChapterEditPage: React.FC = () => {
 // LIVE CLASS MANAGER COMPONENT
 const LiveClassManager: React.FC<{chapter: Chapter, onUpdate: (c: Chapter, msg: string) => void}> = ({ chapter, onUpdate }) => {
     const { courseId, subjectId, chapterId } = useParams();
+    const { logoUrl } = useBranding();
     const [title, setTitle] = useState('');
     const [isLive, setIsLive] = useState(false);
     const [status, setStatus] = useState('');
@@ -212,7 +210,7 @@ const LiveClassManager: React.FC<{chapter: Chapter, onUpdate: (c: Chapter, msg: 
                 videoType: 'live',
                 isLive: true,
                 videoUrl: '', // Empty initially, updated after first chunk
-                thumbnail: logoSrc // Default thumbnail for live
+                thumbnail: logoUrl // Default thumbnail for live
             };
             
             // Update chapter immediately
@@ -315,6 +313,7 @@ const LiveClassManager: React.FC<{chapter: Chapter, onUpdate: (c: Chapter, msg: 
 };
 
 const LectureListManager: React.FC<{chapter: Chapter, onUpdate: (c: Chapter, msg: string) => void}> = ({ chapter, onUpdate }) => {
+    const { logoUrl } = useBranding();
     const [newItemTitle, setNewItemTitle] = useState('');
     const [videoType, setVideoType] = useState<'youtube' | 'telegram'>('youtube');
     const [youtubeUrl, setYoutubeUrl] = useState('');
@@ -336,7 +335,7 @@ const LectureListManager: React.FC<{chapter: Chapter, onUpdate: (c: Chapter, msg
         
         let youtubeId = null;
         let videoUrl = null;
-        let thumbnailUrl = logoSrc; // DEFAULT THUMBNAIL
+        let thumbnailUrl = logoUrl; // DEFAULT THUMBNAIL FROM BRANDING
         const type: 'youtube' | 'telegram' = videoType;
 
         if (videoType === 'youtube') {
@@ -358,13 +357,14 @@ const LectureListManager: React.FC<{chapter: Chapter, onUpdate: (c: Chapter, msg
                 }
 
                 // 2. Process Video
-                const DIRECT_UPLOAD_LIMIT = 2 * 1024 * 1024; // 2MB Limit for direct
+                // FIX: Increased limit to 45MB to allow more direct uploads without WASM processing
+                const DIRECT_UPLOAD_LIMIT = 45 * 1024 * 1024; 
                 const isLargeFile = videoFile.size > DIRECT_UPLOAD_LIMIT;
 
                 const fileIds: string[] = [];
                 
                 if (isLargeFile) {
-                     setUploadStatus(`Processing ${Math.round(videoFile.size/1024/1024)}MB file...`);
+                     setUploadStatus(`Processing ${Math.round(videoFile.size/1024/1024)}MB file (Client-side split)...`);
                      
                      try {
                         // Split video using FFmpeg in browser
@@ -375,7 +375,7 @@ const LectureListManager: React.FC<{chapter: Chapter, onUpdate: (c: Chapter, msg
                              }
                         });
 
-                        setUploadStatus(`Uploading ${segments.length} optimized clips...`);
+                        setUploadStatus(`Uploading ${segments.length} clips...`);
                         
                         for (let i = 0; i < segments.length; i++) {
                             const segment = segments[i];
@@ -396,7 +396,7 @@ const LectureListManager: React.FC<{chapter: Chapter, onUpdate: (c: Chapter, msg
 
                      } catch (err) {
                          console.error("Splitting error", err);
-                         throw new Error("Video processing failed: " + (err as Error).message);
+                         throw new Error("Video processing failed. Try a smaller file or different format.");
                      }
 
                 } else {
@@ -564,7 +564,7 @@ const LectureListManager: React.FC<{chapter: Chapter, onUpdate: (c: Chapter, msg
                                 <span className={`text-sm ${uploadError ? 'text-rose-600 font-medium' : 'text-slate-600'}`}>
                                     {uploadError ? uploadError : (videoFile ? videoFile.name : "Click to Select Video File")}
                                 </span>
-                                {!uploadError && <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1"><Zap size={10}/> Turbo-Splitting Enabled (100MB+ ready)</span>}
+                                {!uploadError && <span className="text-xs text-emerald-600 font-semibold flex items-center gap-1"><Zap size={10}/> Optimized Upload (Up to 2GB via Split)</span>}
                             </div>
                         </div>
                         
@@ -576,10 +576,10 @@ const LectureListManager: React.FC<{chapter: Chapter, onUpdate: (c: Chapter, msg
                                     onChange={(e) => setSplitDuration(Number((e.target as any).value))}
                                     className="input-style py-2"
                                 >
-                                    <option value="5">5s (For &lt; 50MB)</option>
-                                    <option value="10">10s (For 100MB+)</option>
-                                    <option value="15">15s (For 300MB+)</option>
-                                    <option value="30">30s (Very Large Files)</option>
+                                    <option value="5">5s (Fast Sync)</option>
+                                    <option value="10">10s (Recommended)</option>
+                                    <option value="15">15s (For HD)</option>
+                                    <option value="30">30s (Long form)</option>
                                 </select>
                             </div>
                              <div className="flex-[2] border border-slate-300 rounded-lg p-2 flex items-center gap-3 bg-white">

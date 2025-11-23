@@ -1,18 +1,9 @@
-
-
-
-
-
 import React, { useState, createContext, useContext, ReactNode, useEffect, useRef } from 'react';
-// FIX: Replaced v6 imports with v5 equivalents. Outlet is removed, useNavigate is useHistory.
-// FIX: Changed import to wildcard to resolve module resolution issues.
 import * as ReactRouterDom from 'react-router-dom';
 const { NavLink, useNavigate } = ReactRouterDom;
 import { useAuth } from '../context/AuthContext';
+import { useBranding } from '../hooks/useBranding';
 import { BookOpen, LayoutGrid, MessageSquare, LogOut, User, Bell, ChevronDown, Menu, Cpu, Trophy } from 'lucide-react';
-import { logoSrc } from '../assets/logo';
-
-
 
 // Layout Context for managing header title
 interface LayoutContextType {
@@ -27,7 +18,6 @@ export const useLayout = () => {
 };
 
 // Main Layout Component
-// FIX: Modified component to accept and render children for v5 compatibility.
 const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [headerTitle, setHeaderTitle] = useState('Study');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -56,6 +46,7 @@ const StudentLayout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
 // Sidebar Component
 export const Sidebar: React.FC<{ isSidebarOpen: boolean, setIsSidebarOpen: (isOpen: boolean) => void }> = ({ isSidebarOpen, setIsSidebarOpen }) => {
+    const { logoUrl, appName } = useBranding();
     const navItems = [
         { name: 'Study', path: '/study', icon: BookOpen },
         { name: 'Leaderboard', path: '/leaderboard', icon: Trophy },
@@ -72,8 +63,8 @@ export const Sidebar: React.FC<{ isSidebarOpen: boolean, setIsSidebarOpen: (isOp
     return (
         <aside className={`fixed top-0 left-0 h-full z-40 w-64 bg-white border-r border-slate-200/80 flex flex-col p-4 transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
             <div className="px-2 mb-8 flex items-center gap-3">
-                <img src={logoSrc} alt="LurnX Logo" className="h-10 w-auto rounded-md" />
-                <span className="text-2xl font-bold text-slate-800">LurnX</span>
+                <img src={logoUrl} alt={`${appName} Logo`} className="h-10 w-auto rounded-md" />
+                <span className="text-2xl font-bold text-slate-800">{appName}</span>
             </div>
             <nav className="flex-1 flex flex-col justify-between">
                 <div>
@@ -88,7 +79,6 @@ export const Sidebar: React.FC<{ isSidebarOpen: boolean, setIsSidebarOpen: (isOp
 
 const SidebarSection: React.FC<{title: string, items: any[], closeSidebar: () => void}> = ({ title, items, closeSidebar }) => {
     const baseClasses = "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 font-semibold text-sm";
-    // Updated activeClasses to use bg-primary (Blue) instead of bg-secondary (Black)
     const activeClasses = "bg-primary text-white shadow-md shadow-primary/30";
     const inactiveClasses = "text-slate-500 hover:bg-slate-100 hover:text-primary";
     const disabledClasses = "opacity-50 cursor-not-allowed";
@@ -134,14 +124,12 @@ const SidebarSection: React.FC<{title: string, items: any[], closeSidebar: () =>
 // Header Component (integrated into layout)
 const Header: React.FC<{ title: string, onMenuClick: () => void }> = ({ title, onMenuClick }) => {
   const { user, logout } = useAuth();
-  // FIX: Switched to useNavigate hook for v6.
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = () => {
     logout();
-    // FIX: Changed navigation method to navigate for v6.
     navigate('/login');
   };
 
@@ -204,6 +192,5 @@ const Header: React.FC<{ title: string, onMenuClick: () => void }> = ({ title, o
     </header>
   );
 };
-
 
 export default StudentLayout;

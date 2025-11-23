@@ -1,8 +1,6 @@
-
 import React, { useState, useEffect, FormEvent } from 'react';
-import { Settings, Image, Palette, Key, Mail, Save, DollarSign, Plus, Trash2, BrainCircuit } from 'lucide-react';
+import { Settings, Image, Palette, Key, Mail, Save, DollarSign, Plus, Trash2, BrainCircuit, Layout } from 'lucide-react';
 import { db } from '../../firebase';
-// FIX: Switched to v9 modular imports.
 import { ref, get, update } from 'firebase/database';
 import LoadingIndicator from '../../components/LoadingIndicator';
 
@@ -14,6 +12,10 @@ const AdminSettings: React.FC = () => {
     const [geminiKeys, setGeminiKeys] = useState<string[]>([]);
     const [newGeminiKey, setNewGeminiKey] = useState('');
     
+    // Branding
+    const [appName, setAppName] = useState('LurnX');
+    const [logoUrl, setLogoUrl] = useState('');
+
     const [loading, setLoading] = useState(true);
     const [feedback, setFeedback] = useState<{ message: string; type: 'info' | 'success' | 'error' } | null>(null);
 
@@ -21,7 +23,6 @@ const AdminSettings: React.FC = () => {
         const fetchSettings = async () => {
             setLoading(true);
             try {
-                // FIX: Use v9 database syntax.
                 const settingsRef = ref(db, 'settings');
                 const snapshot = await get(settingsRef);
                 if (snapshot.exists()) {
@@ -33,6 +34,8 @@ const AdminSettings: React.FC = () => {
                     if (data.gemini?.apiKeys) {
                         setGeminiKeys(Array.isArray(data.gemini.apiKeys) ? data.gemini.apiKeys : Object.values(data.gemini.apiKeys));
                     }
+                    setAppName(data.branding?.appName || 'LurnX');
+                    setLogoUrl(data.branding?.logoUrl || '');
                 }
             } catch (error) {
                 console.error("Failed to fetch settings:", error);
@@ -50,7 +53,6 @@ const AdminSettings: React.FC = () => {
         try {
             const updates: any = {};
             
-            // Flatten updates to avoid overwriting other potential child nodes if structure changes
             updates['settings/telegram/botToken'] = botToken.trim();
             updates['settings/telegram/chatId'] = chatId.trim();
             
@@ -58,8 +60,10 @@ const AdminSettings: React.FC = () => {
             updates['settings/razorpay/keySecret'] = razorpayKeySecret.trim();
             
             updates['settings/gemini/apiKeys'] = geminiKeys;
+            
+            updates['settings/branding/appName'] = appName.trim();
+            updates['settings/branding/logoUrl'] = logoUrl.trim();
 
-            // FIX: Use update instead of set to safely merge changes
             await update(ref(db), updates);
 
             setFeedback({ message: 'Settings saved successfully!', type: 'success' });
@@ -102,7 +106,38 @@ const AdminSettings: React.FC = () => {
 
             <form onSubmit={handleSave} className="space-y-8">
                 
-                {/* AI Settings - New Feature */}
+                {/* Branding Settings */}
+                <div className="bg-white border border-slate-200 p-6 rounded-xl shadow-md">
+                    <h2 className="text-xl font-semibold text-slate-800 flex items-center gap-2">
+                        <Layout className="text-pink-600"/> Branding & Appearance
+                    </h2>
+                    <p className="text-sm text-slate-500 mt-1">Customize the app name and logo link.</p>
+                    <div className="border-t border-slate-200 pt-6 mt-4 space-y-4">
+                        <div>
+                            <label className="label-style">App Name</label>
+                            <input 
+                                type="text" 
+                                value={appName} 
+                                onChange={(e) => setAppName(e.target.value)} 
+                                className="input-style" 
+                                placeholder="e.g. LurnX"
+                            />
+                        </div>
+                        <div>
+                            <label className="label-style">Logo URL</label>
+                            <input 
+                                type="text" 
+                                value={logoUrl} 
+                                onChange={(e) => setLogoUrl(e.target.value)} 
+                                className="input-style" 
+                                placeholder="https://..."
+                            />
+                            <p className="text-xs text-slate-400 mt-1">Use a direct link to an image (JPG/PNG).</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* AI Settings */}
                 <div className="bg-white border border-slate-200 p-6 rounded-xl shadow-md">
                      <h2 className="text-xl font-semibold text-slate-800 flex items-center gap-2">
                         <BrainCircuit className="text-purple-600"/> AI Tutor Configuration (Gemini)

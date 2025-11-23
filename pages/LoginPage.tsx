@@ -1,9 +1,8 @@
-
 import React, { useState, FormEvent } from 'react';
 import * as ReactRouterDom from 'react-router-dom';
 const { Link, useNavigate } = ReactRouterDom;
 import { useAuth } from '../context/AuthContext';
-import { logoSrc } from '../assets/logo';
+import { useBranding } from '../hooks/useBranding';
 import { LogIn } from 'lucide-react';
 
 const LoginPage: React.FC = () => {
@@ -13,6 +12,7 @@ const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login, loginWithGoogle } = useAuth();
+  const { logoUrl, appName } = useBranding();
 
   const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
@@ -74,7 +74,7 @@ const LoginPage: React.FC = () => {
       <div className="w-full max-w-md space-y-8 opacity-0 animate-fade-in-up">
         <div className="text-center">
             <Link to="/">
-                <img src={logoSrc} alt="VedPath Logo" className="mx-auto h-16 w-auto mb-6 drop-shadow-md hover:scale-105 transition-transform" />
+                <img src={logoUrl} alt={`${appName} Logo`} className="mx-auto h-16 w-auto mb-6 drop-shadow-md hover:scale-105 transition-transform" />
             </Link>
             <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">
                 Welcome Back

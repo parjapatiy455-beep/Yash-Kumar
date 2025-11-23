@@ -1,13 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import * as ReactRouterDom from 'react-router-dom';
 const { Link, NavLink, useLocation } = ReactRouterDom;
 import { useAuth } from '../context/AuthContext';
-import { logoSrc } from '../assets/logo';
+import { useBranding } from '../hooks/useBranding';
 import { Menu, X, LogIn, UserPlus, LayoutDashboard, BookOpen, Home } from 'lucide-react';
 
 const Navbar: React.FC = () => {
     const { user } = useAuth();
+    const { logoUrl, appName } = useBranding();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const location = useLocation();
@@ -33,13 +33,13 @@ const Navbar: React.FC = () => {
                     {/* Logo Area */}
                     <Link to="/" className="flex items-center gap-3 group">
                         <img 
-                            src={logoSrc} 
-                            alt="LurnX Logo" 
+                            src={logoUrl} 
+                            alt={`${appName} Logo`} 
                             style={{ height: '40px', width: 'auto' }}
                             className="h-10 w-auto object-contain transition-transform group-hover:scale-105 drop-shadow-sm rounded-md" 
                         />
                         <span className={`text-2xl font-extrabold tracking-tighter transition-colors ${scrolled ? 'text-slate-900' : 'text-slate-900'}`}>
-                            LurnX
+                            {appName}
                         </span>
                     </Link>
 

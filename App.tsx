@@ -1,10 +1,9 @@
-import React from 'react';
-// FIX: Upgraded react-router-dom to v6.
-// FIX: Changed import to wildcard to resolve module resolution issues.
+import React, { useEffect } from 'react';
 import * as ReactRouterDom from 'react-router-dom';
 const { HashRouter, Routes, Route, Navigate } = ReactRouterDom;
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LoadingIndicator from './components/LoadingIndicator';
+import { useBranding } from './hooks/useBranding';
 
 // New Imports for Public Pages
 import PublicLayout from './components/PublicLayout';
@@ -43,8 +42,6 @@ import AITestGeneratorPage from './pages/student/AITestGeneratorPage';
 import LeaderboardPage from './pages/student/LeaderboardPage';
 import InfoAIPage from './pages/InfoAIPage';
 
-
-
 const App: React.FC = () => {
   return (
     <AuthProvider>
@@ -55,8 +52,23 @@ const App: React.FC = () => {
 
 const MainRouter: React.FC = () => {
   const { user, loading } = useAuth();
+  const { appName, logoUrl } = useBranding();
+  
   const isStudent = user && user.role === 'student';
   const isAdmin = user && user.role === 'admin';
+
+  useEffect(() => {
+    if (appName) document.title = appName;
+    if (logoUrl) {
+        let link = document.querySelector("link[rel~='icon']") as HTMLLinkElement;
+        if (!link) {
+            link = document.createElement('link');
+            link.rel = 'icon';
+            document.getElementsByTagName('head')[0].appendChild(link);
+        }
+        link.href = logoUrl;
+    }
+  }, [appName, logoUrl]);
 
   if (loading) {
     return <LoadingIndicator fullscreen />;
@@ -64,7 +76,6 @@ const MainRouter: React.FC = () => {
 
   return (
     <HashRouter>
-      {/* FIX: Replaced v5 <Switch> with v6 <Routes> and restructured routing logic. */}
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<PublicLayout><HomePage /></PublicLayout>} />

@@ -1,15 +1,17 @@
 import React from 'react';
 import { Twitter, Github, Linkedin } from 'lucide-react';
-import { logoSrc } from '../assets/logo';
+import { useBranding } from '../hooks/useBranding';
 
 const Footer: React.FC = () => {
+    const { logoUrl, appName } = useBranding();
+    
     return (
         <footer className="bg-white border-t border-slate-200 mt-auto">
             <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8">
                 <div className="flex flex-col items-center text-center">
                     <div className="flex items-center justify-center gap-3 mb-4">
-                        <img src={logoSrc} alt="LurnX Logo" className="h-10 w-auto rounded-md" />
-                        <span className="text-xl font-bold text-slate-800">LurnX</span>
+                        <img src={logoUrl} alt={`${appName} Logo`} className="h-10 w-auto rounded-md" />
+                        <span className="text-xl font-bold text-slate-800">{appName}</span>
                     </div>
                     <p className="text-slate-500 max-w-md text-sm leading-relaxed mb-6">
                         Empowering the next generation of learners through an intuitive, powerful, and accessible online education platform.
@@ -28,7 +30,7 @@ const Footer: React.FC = () => {
                     </div>
                     
                     <div className="text-xs text-slate-400 border-t border-slate-100 pt-8 w-full">
-                        <p>&copy; {new Date().getFullYear()} LurnX. All rights reserved.</p>
+                        <p>&copy; {new Date().getFullYear()} {appName}. All rights reserved.</p>
                     </div>
                 </div>
             </div>
